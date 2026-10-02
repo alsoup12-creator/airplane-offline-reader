@@ -1,0 +1,8 @@
+{
+  "name": "xhs-offline-skill", "version": "0.1.0", "private": true, "type": "module",
+  "engines": { "node": ">=22.12" },
+  "scripts": {
+    "offline": "node xhs-offline-skill/scripts/offline.mjs", "test": "node --test tests/*.test.mjs", "test:e2e": "playwright test"
+  },
+  "devDependencies": { "@playwright/test": "^1.55.0" }
+}

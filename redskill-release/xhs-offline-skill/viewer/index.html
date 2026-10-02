@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Offline Feed · 离线内容包</title>
+<style>/*VIEWER_CSS*/</style>
+</head>
+<body>
+<header class="top"><div><span class="mark">↗</span><strong>Offline Feed</strong><span class="subtitle">留一点世界，路上慢慢看。</span></div><button id="info-toggle" aria-expanded="false" aria-controls="pack-info">离线包信息</button></header>
+<aside id="pack-info" hidden><h2>这一次的离线时光</h2><p id="pack-summary"></p><p id="pack-issues"></p><p>正文和图片均从本地读取。来源链接仅供联网后手动访问。估算时长不代表实际阅读时长。</p><small id="pack-id"></small></aside>
+<main>
+<section class="reader" aria-label="离线信息流">
+<div class="reader-top"><span id="mode"></span><span id="counter" aria-live="polite"></span></div>
+<article id="card" aria-label="当前笔记">
+<div class="author-line"><span id="avatar" aria-hidden="true"></span><div><strong id="author"></strong><small id="published"></small></div><span id="viewed"></span></div>
+<div id="photo" class="photo"><img id="image" alt="" draggable="false"><p id="no-image" hidden>把这一刻，留在文字里。</p><div id="image-controls"><button id="image-prev" aria-label="上一张图片">‹</button><span id="image-counter"></span><button id="image-next" aria-label="下一张图片">›</button></div></div>
+<div class="copy"><h1 id="title"></h1><div id="text" tabindex="0"></div><button id="expand" aria-expanded="false">展开全文</button></div>
+<footer class="card-bottom"><div id="stats"></div><a id="source" target="_blank" rel="noopener noreferrer" hidden>查看原文 ↗</a></footer>
+</article>
+<div id="empty" hidden><h1>这次还没有准备好内容</h1><p>请在联网时重新运行 prepare_offline。</p></div>
+<nav class="navigation" aria-label="切换笔记"><button id="prev">↑ 上一条</button><span id="hint" aria-live="polite">上滑，继续发现</span><button id="next">下一条 ↓</button></nav>
+<div class="progress"><span id="progress"></span></div>
+</section>
+<p class="outside-hint">上下滑换笔记 · 左右滑看图片<br>也可使用方向键、PageUp / PageDown 和鼠标滚轮</p>
+</main>
+<script id="offline-data" type="application/json">/*PACK_DATA*/</script>
+<script>/*VIEWER_JS*/</script>
+</body></html>
