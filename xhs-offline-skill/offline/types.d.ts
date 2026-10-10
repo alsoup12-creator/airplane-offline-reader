@@ -14,6 +14,12 @@ export interface OfflineFeedItem {
   publishedAt?: string; sourceUrl?: string; estimatedReadSeconds: number; cachedAt: string;
   cacheStatus: 'pending' | 'downloading' | 'ready' | 'partial' | 'failed';
   failedImages?: number; demo?: boolean;
+  comments?: OfflineComment[];
+  commentSnapshot?: { status: 'complete' | 'partial' | 'unavailable'; cachedCount: number; total?: number; capturedAt?: string };
+}
+export interface OfflineComment {
+  id: string; text: string; author?: { name?: string }; likes?: number;
+  replies: OfflineComment[]; replyCount?: number;
 }
 export interface OfflinePack {
   schemaVersion: 1; id: string; mode: string; targetMinutes: number; reserveRatio: number;

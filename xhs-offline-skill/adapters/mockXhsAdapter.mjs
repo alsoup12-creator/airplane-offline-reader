@@ -46,7 +46,10 @@ export class MockXhsAdapter {
     return { id: preview.id, source: 'xiaohongshu', title: title && `${title}${n >= 30 ? ` · 演示变体 ${Math.floor(n / 30) + 1}` : ''}`,
       text: t === 26 ? paragraph : Array.from({ length: t === 28 ? 40 : 7 + t % 4 }, (_, i) => `${i + 1}. ${paragraph}`).join('\n\n'),
       author: { name: `${tag}记录员 · 虚构作者` }, remoteImages, localImages: [],
-      stats: { likes: (n * 37) % 2000, comments: n % 40, collects: n % 80 },
+      stats: { likes: (n * 37) % 2000, comments: 2, collects: n % 80 },
+      comments: [{ id: `${preview.id}-comment`, author: { name: '旅途读者 · 虚构用户' }, text: '读完这段文字，想把脚步放慢一点。', likes: 3,
+        replyCount: 1, replies: [{ id: `${preview.id}-reply`, author: { name: '记录员 · 虚构用户' }, text: '谢谢你，也祝你一路有好风景。', likes: 1, replies: [] }] }],
+      commentSnapshot: { status: 'complete', cachedCount: 2, total: 2, capturedAt: new Date().toISOString() },
       estimatedReadSeconds: 0, cachedAt: '', cacheStatus: 'pending', demo: true,
     };
   }

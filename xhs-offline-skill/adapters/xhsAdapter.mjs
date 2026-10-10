@@ -14,6 +14,29 @@ function unwrap(result) {
   if (result?.success === false) throw new Error('小红书服务返回失败');
   return result?.data ?? result;
 }
+// Cache the returned snapshot only; never infer that an initial page is complete.
+export function normalizeComments(raw, total) {
+  if (!raw || !Array.isArray(raw.list)) return { comments: [], commentSnapshot: { status: 'unavailable', cachedCount: 0, total } };
+  let remaining = 200, truncated = false;
+  const seen = new Set();
+  const normalize = (entry, reply = false) => {
+    if (!entry || typeof entry.content !== 'string' || !entry.id) { truncated = true; return null; }
+    if (seen.has(String(entry.id))) return null;
+    if (!remaining) { truncated = true; return null; }
+    remaining--; seen.add(String(entry.id));
+    const text = entry.content.slice(0, 10000);
+    if (text.length !== entry.content.length) truncated = true;
+    const replies = reply ? [] : (Array.isArray(entry.subComments) ? entry.subComments : []).map(e => normalize(e, true)).filter(Boolean);
+    const replyCount = count(entry.subCommentCount);
+    if ((replyCount ?? 0) > replies.length || (reply && entry.subComments?.length)) truncated = true;
+    return { id: String(entry.id), text, author: { name: String(entry.userInfo?.nickname ?? entry.userInfo?.nickName ?? '未知用户').slice(0, 200) },
+      likes: count(entry.likeCount), replies, replyCount };
+  };
+  const comments = raw.list.map(e => normalize(e)).filter(Boolean);
+  const cachedCount = 200 - remaining;
+  const incomplete = truncated || raw.hasMore !== false || (total != null && total > cachedCount);
+  return { comments, commentSnapshot: { status: incomplete ? 'partial' : 'complete', cachedCount, total, capturedAt: new Date().toISOString() } };
+}
 export function normalizeDetail(result, preview) {
   const data = unwrap(result);
   const note = data?.data?.note ?? data?.note ?? data;
@@ -25,6 +48,7 @@ export function normalizeDetail(result, preview) {
     author: { id: note.user?.userId, name: note.user?.nickname ?? note.user?.nickName ?? '未知作者' },
     remoteImages: images, localImages: [],
     stats: { likes: count(note.interactInfo?.likedCount), comments: count(note.interactInfo?.commentCount), collects: count(note.interactInfo?.collectedCount) },
+    ...normalizeComments((data?.data ?? data)?.comments, count(note.interactInfo?.commentCount)),
     publishedAt: Number.isFinite(note.time) && note.time > 0 ? new Date(note.time).toISOString() : undefined,
     sourceUrl: `https://www.xiaohongshu.com/explore/${encodeURIComponent(note.noteId)}`,
     estimatedReadSeconds: 0, cachedAt: '', cacheStatus: 'pending',

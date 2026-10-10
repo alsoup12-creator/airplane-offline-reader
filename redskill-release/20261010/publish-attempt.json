@@ -1,0 +1,24 @@
+{
+  "environment": "prod",
+  "cliVersion": "1.0.3",
+  "status": "error",
+  "code": "SUBMIT_REJECTED",
+  "message": "Skill ID 已被占用",
+  "skillIdentifier": "xhs-offline-skill",
+  "name": "小红书飞机离线阅读器",
+  "version": "1.1.0",
+  "source": "original",
+  "tags": [
+    "效率工具"
+  ],
+  "bundleSizeBytes": 58842,
+  "bundleSha256": "10f9159b1c6578b7711b75530dc13e29bcbecc5bce16f6d836e8673d84ee11cf",
+  "bundleUploaded": true,
+  "versionSubmitted": false,
+  "candidateTestsPassed": 31,
+  "filesComplete": true,
+  "realContentVerified": false,
+  "phoneOfflineVerified": false,
+  "artifact": "C:\\Users\\Alsou\\Documents\\ChatGPT\\飞机阅读器开发\\exports\\xhs-offline-skill-1.1.0-20261010.zip",
+  "recordedAt": "2026-10-10T13:38:17.3235922+08:00"
+}

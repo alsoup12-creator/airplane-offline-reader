@@ -35,8 +35,10 @@ test('fresh file opening while offline: all notes, all images, refresh, metadata
     if(i<29) await page.keyboard.press('PageDown');
   }
   await expect(page.locator('#next')).toBeDisabled();
-  await page.reload(); await expect(page.locator('#counter')).toHaveText('1 / 30');
+  await page.reload(); await expect(page.locator('#counter')).toHaveText('30 / 30');
   await expect(page.locator('#viewed')).toHaveText('已看过');
+  await page.locator('#search-panel summary').click(); await page.locator('#restart').click();
+  await expect(page.locator('#counter')).toHaveText('1 / 30'); await page.locator('#search-panel summary').click();
   await page.screenshot({path:'output/playwright/offline-desktop.png',fullPage:true});
   expect(remote).toEqual([]); expect(errors).toEqual([]);
 });

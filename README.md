@@ -2,7 +2,7 @@
 
 有网时提前准备图文，没网时也能慢慢看。飞机离线阅读器希望让飞机、旅途等网络受限场景下的阅读更方便。
 
-**本仓库首先发布小红书分支 `xiaohongshu`，当前为试验版。** 通过 Red Skill 分发，为现有小红书 Skill / MCP 增加本地离线图文包能力。当前使用流程是：电脑上的 AI 工具准备内容 → 导出完整离线包 → 复制到安卓手机 → 打开本地阅读页，断网连续翻阅。
+**本仓库首先发布小红书分支 `xiaohongshu`，当前为试验版。** 通过 Red Skill 分发，为现有小红书 Skill / MCP 增加离线图文与评论包能力。2026-10-09 开发源码支持一次准备并生成单文件：有执行能力的手机本机 Agent 可以本地保存；手机控制远程 Agent 时由宿主附件工具交付；电脑准备时也可用同网二维码接收。阅读文件独立运行，断网阅读无需 Agent、Node 或 MCP。
 
 ## 后续开发方向
 
@@ -12,17 +12,20 @@
 
 ## 当前版本与验证进度
 
-- 小红书 SkillHub 展示名称：**小红书飞机离线阅读器**，平台版本 V1.0.0；管理页面已显示“生效中”。
+- 小红书 SkillHub 展示名称：**小红书飞机离线阅读器**；V1.1.0 已于 2026-10-10 由用户手动发布完成（依据用户确认）。此前官方 CLI 提交返回“Skill ID 已被占用”，该失败仅对应当次 CLI 提交；历史回执保留。
 - Red Skill 的入口可通过小红书笔记挂载，用于获取并安装到支持 Skill 的 AI 工具。当前版本需要 Node.js 环境和已有内容来源。
-- 已实现：按时长构建离线图文包、查询库存、列出及删除包、导出静态阅读页。
-- 已验证：演示数据的本地离线阅读、23 项核心测试和 3 项浏览器测试。详细记录见 [TEST-RESULTS.md](TEST-RESULTS.md)。
-- 待验证：真实小红书账号内容及图片获取、安卓真机文件打开和飞行模式阅读。
-- 当前版本没有手机一键缓存或小红书 App 内直接离线刷的入口。阅读页依赖手机允许打开本地 HTML 和关联图片，出行前需要实测。
+- 已实现：按时长准备、库存管理、评论与回复快照、单文件与文件夹导出、同网二维码传输。新增一次准备并交付、宿主位置检查、交付失败恢复、文件体积/评论覆盖报告，以及阅读进度恢复、离线搜索和大字模式。
+- 内容范围：缓存图文、图片及评论/回复；当前会过滤视频笔记，暂不支持视频缓存或断网播放。
+- 已验证：31 项核心测试与 6 项浏览器测试，包含断网重新打开、评论搜索、位置与字体恢复、不能保存进度时的阅读、附件待交付状态与导出失败重试。详细记录见 [TEST-RESULTS.md](TEST-RESULTS.md)。
+- 待验证：真实小红书账号内容、Mac 运行、Android/iPhone 本地文件入口与飞行模式阅读，以及具体手机 Agent 的执行、内容来源与附件能力。
+- 二维码适用于手机与执行主机同网的场景，传输时主机保持运行。远程 Agent 优先通过真实附件工具交付；脚本返回文件路径和待交付描述，不会自动发送附件。手机本机流程不需要电脑参与，但需要宿主满足准备与文件打开能力。
+- V1.1.0 兼容源码已保存到 `redskill-release/20261010/xhs-offline-skill/`，官方 CLI 生成的本地上传文件为 `exports/xhs-offline-skill-1.1.0-20261010.zip`（不纳入 Git）。SkillHub 已由用户手动发布新版；本次未更新用户全局安装目录，也未独立核验平台下载包是否与本地 ZIP 一致。
 
 ## 源码与 Red Skill 版本
 
 - [`xhs-offline-skill/`](xhs-offline-skill/)：开发源码，下面的运行示例使用此目录。
 - [`redskill-release/xhs-offline-skill/`](redskill-release/xhs-offline-skill/)：提交到 SkillHub 的兼容源码，使用 `.js` 文件及 `type: module`，可独立运行。平台展示版本 V1.0.0 与源码内部的 0.1.0 开发版本分别管理。
+- [`redskill-release/20261010/xhs-offline-skill/`](redskill-release/20261010/xhs-offline-skill/)：V1.1.0 兼容源码，含评论、手机交付和新版阅读功能；旧版目录保留。历史 CLI 提交失败记录见 [`publish-attempt.json`](redskill-release/20261010/publish-attempt.json)，后续手动发布完成情况见 [测试与发布记录](TEST-RESULTS.md)。
 - [`scripts/prepare-redskill-directory.py`](scripts/prepare-redskill-directory.py)：从开发源码生成兼容目录；为保留已有提交，它不会覆盖现存目录。上传打包由官方 CLI 完成。
 
 ## 笔记配图
@@ -36,6 +39,9 @@
 需要 Node.js 22.12 或更高版本。运行工具不需要安装依赖、不需要编译。以下命令在本项目根目录运行。
 
 ```powershell
+# 一次准备真实内容并生成独立阅读文件；真实 MCP 须已启动并登录
+node xhs-offline-skill/scripts/offline.mjs prepare_and_deliver --target-minutes 30 --output exports/trip.html
+
 # 准备 30 分钟演示内容，实际目标含 25% 冗余 = 37.5 分钟
 node xhs-offline-skill/scripts/offline.mjs prepare_offline --target-minutes 30 --adapter mock
 
@@ -54,11 +60,35 @@ node xhs-offline-skill/scripts/offline.mjs clear_offline --pack-id PACK_ID
 
 也可用 `npm run offline -- <动作> <参数>`。JSON 输出在 stdout，进度输出在 stderr。`--quiet` 隐藏进度。
 
+CLI 默认真实 `xhs`，演示需显式 `--adapter mock`。手机操作宿主选择见 [手机交付说明](xhs-offline-skill/references/mobile-delivery.md)；诊断可用 `node xhs-offline-skill/scripts/doctor.mjs --host mobile-local`（手机本机）或 `--host remote`（远程执行）。已有缓存使用 `deliver_offline --pack-id PACK_ID`，不需要重新获取。一次准备后若文件生成失败，原包保留，退出码 3；换路径或导出方式重试即可。
+
+## 二维码传到手机与评论
+
+新包会保存详情接口返回的评论与回复；阅读页点击“查看评论”即可离线阅读。当前保存初始返回的评论，每条笔记最多 200 条评论与回复，不保证覆盖全部评论；页面会区分“部分缓存”“未获取”和准备时无评论。旧包不会自动补评论。阅读时长仍按笔记正文与图片估算，不包含评论。
+
+准备完成后运行（将 `PACK_ID` 换为返回的真实 ID）：
+
+```powershell
+node xhs-offline-skill/scripts/offline.mjs share_offline --pack-id PACK_ID
+```
+
+Agent 在电脑浏览器打开返回的 `desktopUrl` 展示二维码，传输进程保持运行。手机连接同一 Wi-Fi 或电脑连接手机热点，扫码打开接收页，点击“下载离线阅读文件”。文件包含正文、图片和已缓存评论，不需要解压或拷贝图片文件夹。下载后从手机“下载”目录打开 HTML；开飞行模式，关闭页面再重新打开文件，检查翻页、图片和评论。接收页的在线预览依赖电脑连接，不能代替下载保存。
+
+默认 30 分钟自动停止；在电脑按 Ctrl+C 可提前结束。二维码本地生成、接收链接含随机令牌，服务只提供指定离线包，不上传云端。多网卡时可传 `--host-ip 本机Wi-Fi地址`；若手机访问失败，检查是否同网、Wi-Fi 是否隔离设备、电脑是否允许局域网访问。工具不自动改防火墙。
+
+也可先导出单文件，再自行传到手机：
+
+```powershell
+node xhs-offline-skill/scripts/offline.mjs export_offline --pack-id PACK_ID --single-file --output exports/my-trip.html
+```
+
+单文件模式限制图片合计 64 MB、最终文件 100 MB，避免手机载入过大；超限时准备更小的包或用原来的文件夹导出。手机系统及文件入口是否允许执行本地 HTML 脚本仍需真机验证。
+
 目标可用 30、60、120、240 分钟或自定义值。数据默认保存在工作目录下 `data/`，可用 `--data-dir` 或环境变量 `XHS_OFFLINE_DATA_DIR` 固定位置。不同工作目录下应显式传入同一个数据目录。
 
 ## 自然语言调用与集成
 
-[SKILL.md](xhs-offline-skill/SKILL.md) 将“给我准备两小时小红书”“我还有多少离线内容”等请求映射到五个动作。克隆仓库会获得源码；需要将 Skill 安装到支持它的宿主，或直接使用以下 CLI 命令。
+[SKILL.md](xhs-offline-skill/SKILL.md) 将准备、库存、删除、导出和手机交付请求映射到对应动作。克隆仓库获得源码；需要将整个 Skill 目录安装到支持它的宿主，或使用 CLI。无需独立网站或 App。
 
 已有 Skill 可以直接调用 [createOfflineModule](xhs-offline-skill/offline/index.mjs)，或执行 CLI。已有 MCP 连接可以注入 `callTool`。详细示例见 [接入说明](xhs-offline-skill/references/integration.md)。
 
@@ -93,7 +123,7 @@ node xhs-offline-skill/scripts/offline.mjs prepare_offline --target-minutes 60 -
 ```text
 xhs-offline-skill/
   SKILL.md                 自然语言调用说明
-  scripts/offline.mjs       五个 CLI 动作
+  scripts/offline.mjs       准备、库存、导出、交付与同网传输
   adapters/                XhsAdapter / MockXhsAdapter
   offline/
     index.mjs              宿主集成入口
@@ -152,9 +182,9 @@ node xhs-offline-skill/scripts/offline.mjs clear_offline --all --reset-history
 2. 完全断网，再双击导出目录的 `index.html`；无须启动 Node 或 MCP。
 3. 用上下方向键、PageUp / PageDown、滚轮或上下滑切换；左右键、图片箭头或左右滑看多图。
 4. 展开长文。长文仍可滚动，滚动到边界后才换笔记；也可直接按下方“下一条”。
-5. 打开“离线包信息”，检查实际时长、数量和部分失败说明；刷新后继续使用。
+5. 打开“离线包信息”，检查实际时长、数量和部分失败说明。打开“搜索与阅读进度”，搜索本包正文、作者及评论，切换大字或从头开始。刷新后恢复笔记、图片位置与字体；进度只存在原浏览器入口，未与 Agent 库存同步。
 
-手机需把完整目录传到设备，并用能够打开本地 HTML 的浏览器或文件工具打开。iOS 文件预览、某些 Android 文件管理器可能限制脚本或关联资源；当前不承诺所有手机入口可用。这里没有实现手机安装、PWA 或专用客户端，出行前应在目标设备验收。
+手机优先保存单文件 HTML，文件夹模式则需完整复制。使用能执行本地 HTML 脚本的文件入口；受限文件预览可能无法翻页或展开评论。入口禁止本地存储时页面提示无法保存进度，仍可阅读、搜索和翻页。移动文件、更换入口或浏览器可能无法恢复旧位置，出行前应在目标设备验收。
 
 Viewer 可将简单已读/停留记录写入当前浏览器 localStorage，不回传 Skill、不用于推荐。部分 `file://` 环境不允许 localStorage 时会退化为本次会话记录，不影响阅读。
 
@@ -181,6 +211,7 @@ npm run test:e2e
 
 - `xpzouying/xiaohongshu-mcp`：Apache-2.0，**适配它的接口**；未捆绑、复制其实现代码。使用者独立安装并遵守上游许可。
 - Playwright / `@playwright/test`：Apache-2.0，仅开发与浏览器测试使用，锁定版本见 `package-lock.json`。
+- QR Code Generator 2.0.4：MIT，本地内置二维码编码器，来源与许可证见 [`vendor/THIRD_PARTY.md`](xhs-offline-skill/vendor/THIRD_PARTY.md)。不使用远程二维码服务。
 - Offline 逻辑与 Viewer、Mock 文字和插图为本项目编写；运行时只使用 Node 内置模块。
 
 仅供当前用户个人离线阅读；保留原作者和来源链接，不绕过登录、付费或访问限制，不公开分发缓存内容。

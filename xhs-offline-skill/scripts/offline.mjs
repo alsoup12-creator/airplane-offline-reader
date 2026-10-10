@@ -6,9 +6,13 @@ import { MockXhsAdapter } from '../adapters/mockXhsAdapter.mjs';
 import { XhsAdapter } from '../adapters/xhsAdapter.mjs';
 const help = `XHS Offline Skill（Node.js 22.12+，无需构建）
   prepare_offline --target-minutes 30 --adapter mock|xhs
+  prepare_and_deliver --target-minutes 30 [--output FILE.html] [--delivery local-file|attachment]
+  deliver_offline --pack-id ID [--output FILE.html] [--delivery local-file|attachment]
   offline_status
   list_offline_packs
   export_offline --pack-id ID [--output DIRECTORY]
+  export_offline --pack-id ID --single-file --output FILE.html
+  share_offline --pack-id ID [--host-ip 本机Wi-Fi地址] [--port 0] [--ttl-minutes 30]
   clear_offline --pack-id ID
   clear_offline --all [--reset-history]
 
@@ -17,14 +21,17 @@ const help = `XHS Offline Skill（Node.js 22.12+，无需构建）
       --max-mb 5120 --mcp-url http://127.0.0.1:18060 --quiet
 Mock：30 种原创模板扩展成 300 条测试变体；默认包含故障样例。
       --mock-total 30 可只使用基础样例；--mock-no-failures 可关闭故障注入。
+默认使用真实 xhs；演示需显式传 --adapter mock。附件模式需宿主发送实际文件。
 stdout 返回 JSON；stderr 显示进度。真实模式不会悄悄回退到 Mock。`;
 try {
   const { values: v, positionals: [action] } = parseArgs({ allowPositionals: true, options: {
     'target-minutes': { type: 'string' }, 'reserve-ratio': { type: 'string', default: '1.25' },
     'max-items': { type: 'string', default: '300' }, 'max-pages': { type: 'string', default: '30' }, 'max-mb': { type: 'string', default: '5120' },
     'data-dir': { type: 'string', default: process.env.XHS_OFFLINE_DATA_DIR ?? 'data' },
-    adapter: { type: 'string', default: 'mock' }, 'mcp-url': { type: 'string', default: process.env.XHS_MCP_URL ?? 'http://127.0.0.1:18060' },
+    adapter: { type: 'string', default: 'xhs' }, 'mcp-url': { type: 'string', default: process.env.XHS_MCP_URL ?? 'http://127.0.0.1:18060' },
     'pack-id': { type: 'string' }, output: { type: 'string' }, all: { type: 'boolean' },
+    delivery: { type: 'string', default: 'local-file' },
+    'single-file': { type: 'boolean' }, 'host-ip': { type: 'string' }, port: { type: 'string', default: '0' }, 'ttl-minutes': { type: 'string', default: '30' },
     'reset-history': { type: 'boolean' }, 'allow-seen-content': { type: 'boolean' },
     'mock-total': { type: 'string', default: '300' }, 'mock-no-failures': { type: 'boolean' }, quiet: { type: 'boolean' }, help: { type: 'boolean' },
   }});
@@ -39,14 +46,26 @@ try {
     if (p.phase === 'media') console.error(`Images cached: item ${p.completed}/${p.planned} | ${p.sizeBytes} bytes | failed ${p.failedImages}`);
   }});
   let result;
+  const prepareOptions = { targetMinutes: Number(v['target-minutes']), reserveRatio: Number(v['reserve-ratio']), maxItems: Number(v['max-items']), maxPages: Number(v['max-pages']), maxBytes: Number(v['max-mb']) * 1024 ** 2, allowSeenContent: !!v['allow-seen-content'] };
   switch (action) {
-    case 'prepare_offline': result = await offline.prepare_offline({ targetMinutes: Number(v['target-minutes']), reserveRatio: Number(v['reserve-ratio']), maxItems: Number(v['max-items']), maxPages: Number(v['max-pages']), maxBytes: Number(v['max-mb']) * 1024 ** 2, allowSeenContent: !!v['allow-seen-content'] }); break;
+    case 'prepare_offline': result = await offline.prepare_offline(prepareOptions); break;
+    case 'prepare_and_deliver': result = await offline.prepare_and_deliver({ ...prepareOptions, output: v.output, delivery: v.delivery }); break;
+    case 'deliver_offline': result = await offline.deliver_offline({ packId: v['pack-id'], output: v.output, delivery: v.delivery }); break;
     case 'offline_status': result = await offline.offline_status(); break;
     case 'list_offline_packs': result = await offline.list_offline_packs(); break;
     case 'clear_offline': result = await offline.clear_offline({ packId: v['pack-id'], all: v.all, resetHistory: v['reset-history'] }); break;
-    case 'export_offline': result = await offline.export_offline({ packId: v['pack-id'], output: v.output }); break;
+    case 'export_offline': result = await offline.export_offline({ packId: v['pack-id'], output: v.output, singleFile: v['single-file'] }); break;
+    case 'share_offline': {
+      const transfer = await offline.share_offline({ packId: v['pack-id'], hostIp: v['host-ip'], port: Number(v.port), ttlMinutes: Number(v['ttl-minutes']) });
+      result = { packId: v['pack-id'], desktopUrl: transfer.desktopUrl, urls: transfer.urls, expiresAt: transfer.expiresAt, fileName: transfer.fileName, sizeBytes: transfer.sizeBytes,
+        note: '电脑打开 desktopUrl 展示二维码；手机同一 Wi-Fi 扫码，下载后从本地重新打开。Ctrl+C 结束传输。' };
+      const stop = async () => { await transfer.close(); process.exit(0); };
+      process.once('SIGINT', stop); process.once('SIGTERM', stop);
+      break;
+    }
     default: throw new Error(`未知动作：${action}；使用 --help 查看命令`);
   }
   console.log(JSON.stringify(result, null, 2));
   if (result?.status === 'failed') process.exitCode = 2;
+  else if (result?.delivery?.status === 'failed') process.exitCode = 3;
 } catch (error) { console.error(JSON.stringify({ error: error.message })); process.exitCode = 1; }
